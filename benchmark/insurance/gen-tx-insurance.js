@@ -40,16 +40,17 @@ async function main() {
 
   console.log('\n======== SETUP ========')
 
-  // Use 100 accounts for impressive benchmark (each can buy multiple policies)
-  let accountsLength = Math.min(100, accounts.length);
+  // Use 1000 accounts for massive parallel benchmark
+  let accountsLength = Math.min(1000, accounts.length);
   console.log(`Using ${accountsLength} accounts for benchmark generation`)
+  console.log(`This will generate ${accountsLength} concurrent buyPolicy transactions`)
 
   // Mint USDC to accounts (in batches to avoid network issues)
   console.log('Minting USDC...')
   for (i = 0; i < accountsLength; i++) {
     let tx = await usdc.mint(accounts[i].address, ethers.utils.parseEther("100000"));
     await tx.wait();
-    if ((i + 1) % 10 === 0) {
+    if ((i + 1) % 50 === 0) {
       console.log(`  Minted for ${i + 1}/${accountsLength} accounts`);
     }
   }
@@ -60,7 +61,7 @@ async function main() {
   for (i = 0; i < accountsLength; i++) {
     let tx = await usdc.connect(accounts[i]).approve(insurance.address, ethers.constants.MaxUint256);
     await tx.wait();
-    if ((i + 1) % 10 === 0) {
+    if ((i + 1) % 50 === 0) {
       console.log(`  Approved ${i + 1}/${accountsLength} accounts`);
     }
   }

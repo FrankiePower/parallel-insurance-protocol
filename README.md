@@ -4,7 +4,7 @@
 
 ## 🏆 Competition Entry
 
-This project demonstrates **real-world parallel execution** for the [Arcology EthOnline Track](https://ethglobal.com/events/ethonline2024/prizes#arcology) ($5,000 prize for best parallel contracts).
+This project demonstrates **real-world parallel execution** for the [Arcology EthOnline Track](https://ethglobal.com/events/ethonline2024/prizes#arcology).
 
 ## 🎯 What Makes This Special
 
