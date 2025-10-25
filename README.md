@@ -35,13 +35,6 @@ Block 3470: total = 20, success = 20, fail = 0
 ✅ Zero write conflicts
 ```
 
-```mermaid
-%%{init: {'theme':'base'}}%%
-pie title Benchmark: Transaction Success Rate
-    "Successful" : 20
-    "Failed" : 0
-```
-
 ### Comparison: Standard vs Parallel
 
 | Metric | Standard ERC20 | ParallelCoin | Improvement |
@@ -78,7 +71,7 @@ gantt
 
 ```mermaid
 flowchart LR
-    subgraph Standard["Standard ERC20 - Sequential"]
+    subgraph Standard["ERC20 - Sequential"]
         A1[User 1] -->|Write Lock| M1[mapping balance]
         A2[User 2] -.->|BLOCKED| M1
         A3[User 3] -.->|BLOCKED| M1
