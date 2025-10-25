@@ -6,19 +6,22 @@ async function main() {
     const [owner] = await ethers.getSigners();
     console.log(`Owner: ${owner.address}\n`);
 
-    // Deploy MockERC20
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    const usdc = await MockERC20.deploy("USDC", "USDC", 18, 0);
+    // Deploy ParallelCoin
+    const ParallelCoin = await ethers.getContractFactory("ParallelCoin");
+    const usdc = await ParallelCoin.deploy("USDC", "USDC", 18);
+    await usdc.deployed();
     console.log(`USDC: ${usdc.address}`);
 
     // Deploy MockPyth
     const MockPyth = await ethers.getContractFactory("MockPyth");
     const pyth = await MockPyth.deploy();
+    await pyth.deployed();
     console.log(`Pyth: ${pyth.address}`);
 
     // Deploy Insurance
     const Insurance = await ethers.getContractFactory("ParallelCoverageManager");
     const insurance = await Insurance.deploy(pyth.address, usdc.address);
+    await insurance.deployed();
     console.log(`Insurance: ${insurance.address}\n`);
 
     // Check concurrent primitives are initialized
