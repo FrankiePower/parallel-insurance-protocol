@@ -36,19 +36,10 @@ Block 3470: total = 20, success = 20, fail = 0
 ```
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#4CAF50','primaryTextColor':'#fff','primaryBorderColor':'#2E7D32','lineColor':'#2196F3','secondaryColor':'#FF9800','tertiaryColor':'#fff'}}}%%
-xychart-beta
-    title "Parallel Insurance Protocol - Benchmark Results"
-    x-axis "Test Run" [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-    y-axis "Success Rate (%)" 0 --> 100
-    bar [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
-```
-
-```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#4CAF50'}}}%%
-pie title Transaction Results
-    "Successful (20)" : 20
-    "Failed (0)" : 0
+%%{init: {'theme':'base'}}%%
+pie title Benchmark: Transaction Success Rate
+    "Successful" : 20
+    "Failed" : 0
 ```
 
 ### Comparison: Standard vs Parallel
@@ -86,8 +77,8 @@ gantt
 ```
 
 ```mermaid
-graph LR
-    subgraph "❌ Standard ERC20 - Sequential Execution"
+flowchart LR
+    subgraph Standard["Standard ERC20 - Sequential"]
         A1[User 1] -->|Write Lock| M1[mapping balance]
         A2[User 2] -.->|BLOCKED| M1
         A3[User 3] -.->|BLOCKED| M1
@@ -96,7 +87,7 @@ graph LR
         M1 -->|Unlock| A3
     end
 
-    subgraph "✅ ParallelCoin - Concurrent Execution"
+    subgraph Parallel["ParallelCoin - Concurrent"]
         B1[User 1] -->|Delta +100| CM[AddressU256CumMap]
         B2[User 2] -->|Delta +200| CM
         B3[User 3] -->|Delta +300| CM
@@ -113,23 +104,23 @@ graph LR
 ### System Overview
 
 ```mermaid
-graph TB
-    subgraph "Users"
+flowchart TB
+    subgraph Users["Users"]
         U1[User 1]
         U2[User 2]
         U3[User N]
     end
 
-    subgraph "Parallel Insurance Protocol"
-        PCM[ParallelCoverageManager<br/>Concurrent Primitives]
-        PC[ParallelCoin<br/>Payment Token]
-        MP[MockPyth<br/>Price Oracle]
-        PM[PriceMath Library<br/>Price Calculations]
+    subgraph Protocol["Parallel Insurance Protocol"]
+        PCM["ParallelCoverageManager<br/>Concurrent Primitives"]
+        PC["ParallelCoin<br/>Payment Token"]
+        MP["MockPyth<br/>Price Oracle"]
+        PM["PriceMath Library<br/>Price Calculations"]
     end
 
-    subgraph "Arcology Concurrent Primitives"
-        U256[U256Cumulative<br/>Global Counters]
-        AUCM[AddressU256CumMap<br/>Per-User State]
+    subgraph Primitives["Arcology Concurrent Primitives"]
+        U256["U256Cumulative<br/>Global Counters"]
+        AUCM["AddressU256CumMap<br/>Per-User State"]
     end
 
     U1 -->|buyPolicy| PCM
@@ -142,8 +133,8 @@ graph TB
     PCM -->|updates| U256
     PCM -->|updates| AUCM
 
-    U256 -.->|totalPolicies<br/>totalCoverage<br/>totalPremiums| PCM
-    AUCM -.->|userPolicyCount<br/>userTotalCoverage| PCM
+    U256 -.->|reads| PCM
+    AUCM -.->|reads| PCM
 
     style PCM fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
     style PC fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
@@ -241,10 +232,10 @@ sequenceDiagram
 
 ```mermaid
 graph TB
-    subgraph "Traditional Solidity Storage"
-        T1[uint256 totalPolicies]
-        T2[mapping address => uint256]
-        T3[uint256[] arrays]
+    subgraph Traditional["Traditional Solidity Storage"]
+        T1["uint256 totalPolicies"]
+        T2["mapping address to uint256"]
+        T3["uint256 array"]
 
         TX1[Transaction 1] -.->|BLOCKED| T1
         TX2[Transaction 2] -.->|BLOCKED| T1
@@ -255,20 +246,20 @@ graph TB
         style T3 fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff
     end
 
-    subgraph "Arcology Concurrent Primitives"
-        C1[U256Cumulative<br/>Global Counters]
-        C2[AddressU256CumMap<br/>Per-User State]
+    subgraph Concurrent["Arcology Concurrent Primitives"]
+        C1["U256Cumulative<br/>Global Counters"]
+        C2["AddressU256CumMap<br/>Per-User State"]
 
-        CTX1[Transaction 1] -->|Delta: +1| C1
-        CTX2[Transaction 2] -->|Delta: +1| C1
-        CTX3[Transaction 3] -->|Delta: +1| C1
+        CTX1[Transaction 1] -->|Delta +1| C1
+        CTX2[Transaction 2] -->|Delta +1| C1
+        CTX3[Transaction 3] -->|Delta +1| C1
 
-        CTX4[User A Tx] -->|Delta: +100| C2
-        CTX5[User B Tx] -->|Delta: +200| C2
-        CTX6[User C Tx] -->|Delta: +300| C2
+        CTX4[User A Tx] -->|Delta +100| C2
+        CTX5[User B Tx] -->|Delta +200| C2
+        CTX6[User C Tx] -->|Delta +300| C2
 
-        C1 -->|Merge| F1[Final State: 3]
-        C2 -->|Merge| F2[Final State:<br/>A: 100, B: 200, C: 300]
+        C1 -->|Merge| F1["Final State: 3"]
+        C2 -->|Merge| F2["Final State<br/>A:100 B:200 C:300"]
 
         style C1 fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
         style C2 fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
@@ -276,8 +267,8 @@ graph TB
         style F2 fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
     end
 
-    Note1[❌ Sequential Execution<br/>Write Conflicts<br/>Low TPS]
-    Note2[✅ Parallel Execution<br/>No Conflicts<br/>High TPS]
+    Note1["Sequential Execution<br/>Write Conflicts<br/>Low TPS"]
+    Note2["Parallel Execution<br/>No Conflicts<br/>High TPS"]
 
     T1 -.-> Note1
     C1 --> Note2
