@@ -80,18 +80,18 @@ contract ParallelCoverageManager is Ownable, Pausable {
     mapping(bytes32 => bool) public supportedPriceIds;
     mapping(address => bool) public supportedTokens;
 
-    // ✅ CONCURRENT COUNTERS: Using U256Cumulative per guardrails Rule 2
+    // ✅ CONCURRENT COUNTERS: Using U256Cumulative
     U256Cumulative public totalPolicies;
     U256Cumulative public totalCoverage;
     U256Cumulative public totalPremiums;
     U256Cumulative public totalClaims;
 
-    // ✅ PER-USER CONCURRENT TRACKING: Using AddressU256CumMap per guardrails Rule 3
+    // ✅ PER-USER CONCURRENT TRACKING: Using AddressU256CumMap
     AddressU256CumMap public userPolicyCount;
     AddressU256CumMap public userTotalCoverage;
     AddressU256CumMap public userTotalPremiums;
 
-    // ❌ REMOVED: Arrays cause write conflicts - eliminated per guardrails Rule 6
+    // ❌ REMOVED: Arrays cause write conflicts - eliminated
     // bytes32[] public allPolicies;        // Sequential bottleneck!
     // bytes32[] public pendingClaims;       // Sequential bottleneck!
     // mapping(address => bytes32[]) public userPolicies;  // Sequential bottleneck!
@@ -231,7 +231,7 @@ contract ParallelCoverageManager is Ownable, Pausable {
         pyth = IPyth(_pyth);
         paymentToken = IERC20(_paymentToken);
 
-        // ✅ Initialize U256Cumulative with bounds per guardrails Rule 2
+        // ✅ Initialize U256Cumulative with bounds
         totalPolicies = new U256Cumulative(0, type(uint256).max);
         totalCoverage = new U256Cumulative(0, type(uint256).max);
         totalPremiums = new U256Cumulative(0, type(uint256).max);
@@ -302,13 +302,12 @@ contract ParallelCoverageManager is Ownable, Pausable {
             priceInfo: priceInfo
         });
 
-        // ✅ PARALLEL-SAFE: Update concurrent counters using .add() per guardrails
+        // ✅ PARALLEL-SAFE: Update concurrent counters using .add()
         totalPolicies.add(1);
         totalCoverage.add(coverageAmount);
         totalPremiums.add(premium);
 
-        // ✅ PARALLEL-SAFE: Update per-user stats with AddressU256CumMap per guardrails Rule 3
-        // Always include bounds for safety (new or existing keys)
+        // ✅ PARALLEL-SAFE: Update per-user stats with AddressU256CumMap
         userPolicyCount.set(msg.sender, 1, 0, type(uint256).max);
         userTotalCoverage.set(msg.sender, int256(coverageAmount), 0, type(uint256).max);
         userTotalPremiums.set(msg.sender, int256(premium), 0, type(uint256).max);
@@ -372,15 +371,12 @@ contract ParallelCoverageManager is Ownable, Pausable {
         if (priceUpdateData.length == 0) revert InvalidPriceUpdate();
         
         try pyth.updatePriceFeeds{value: msg.value}(priceUpdateData) {
-            // Emit events for updated prices
             for (uint256 i = 0; i < priceUpdateData.length; i++) {
-                // This is a simplified version - in practice you'd parse the update data
-                // to get specific price IDs and values
                 emit PriceFeedUpdated(
-                    bytes32(0), // Would be actual price ID
-                    0, // Would be actual price
-                    uint64(block.timestamp), // Would be actual update time
-                    0 // Would be actual confidence
+                    bytes32(0), 
+                    0, 
+                    uint64(block.timestamp), 
+                    0 
                 );
             }
         } catch {
@@ -505,7 +501,7 @@ contract ParallelCoverageManager is Ownable, Pausable {
                 price: pythPrice.price,
                 confidence: uint32(pythPrice.conf),
                 expo: pythPrice.expo,
-                twap: 0, // Would calculate TWAP if needed
+                twap: 0, 
                 normalizedPrice: PriceMath.normalizePythPrice(pythPrice)
             });
         } catch {
@@ -525,28 +521,22 @@ contract ParallelCoverageManager is Ownable, Pausable {
         uint256 duration,
         PriceInfo memory priceInfo
     ) internal view returns (uint256 premium) {
-        // Base premium calculation
         uint256 basePremium = (coverageAmount * basePremiumRate) / BASIS_POINTS;
         
-        // Duration factor (longer policies cost more)
         uint256 durationFactor = (duration * 100) / (365 days);
-        uint256 durationMultiplier = 100 + durationFactor; // 100% + duration factor
+        uint256 durationMultiplier = 100 + durationFactor; 
         
-        // Price volatility factor based on confidence
         uint256 confidenceFactor = 100 + (uint256(priceInfo.confidence) / 1000);
         
-        // Price stability factor (higher price = more stable)
         uint256 priceStabilityFactor = 100;
         if (priceInfo.normalizedPrice > 0) {
-            // More expensive tokens are considered more stable
-            uint256 priceTier = priceInfo.normalizedPrice / (100 * 10**18); // $100 tiers
+            uint256 priceTier = priceInfo.normalizedPrice / (100 * 10**18); 
             priceStabilityFactor = 100 + (priceTier / 10); // Up to 10% bonus for high-value tokens
         }
         
         // Calculate final premium
         premium = (basePremium * durationMultiplier * confidenceFactor * priceStabilityFactor) / (100 * 100 * 100);
         
-        // Ensure premium is within bounds
         uint256 minPremium = (coverageAmount * minPremiumRate) / BASIS_POINTS;
         uint256 maxPremium = (coverageAmount * maxPremiumRate) / BASIS_POINTS;
         
@@ -810,7 +800,6 @@ contract ParallelCoverageManager is Ownable, Pausable {
         uint256 _totalClaims,
         uint256 _contractBalance
     ) {
-        // ✅ Call .get() on U256Cumulative per guardrails
         return (
             totalPolicies.get(),
             totalCoverage.get(),
