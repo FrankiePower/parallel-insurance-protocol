@@ -35,6 +35,22 @@ Block 3470: total = 20, success = 20, fail = 0
 ✅ Zero write conflicts
 ```
 
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#4CAF50','primaryTextColor':'#fff','primaryBorderColor':'#2E7D32','lineColor':'#2196F3','secondaryColor':'#FF9800','tertiaryColor':'#fff'}}}%%
+xychart-beta
+    title "Parallel Insurance Protocol - Benchmark Results"
+    x-axis "Test Run" [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    y-axis "Success Rate (%)" 0 --> 100
+    bar [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+```
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#4CAF50'}}}%%
+pie title Transaction Results
+    "Successful (20)" : 20
+    "Failed (0)" : 0
+```
+
 ### Comparison: Standard vs Parallel
 
 | Metric | Standard ERC20 | ParallelCoin | Improvement |
@@ -46,7 +62,94 @@ Block 3470: total = 20, success = 20, fail = 0
 
 **Key Insight**: Standard ERC20 mappings cause write conflicts when multiple users transfer tokens simultaneously. ParallelCoin's `AddressU256CumMap` allows unlimited parallel transfers through delta operations.
 
+### Parallel vs Sequential Execution
+
+```mermaid
+gantt
+    title Standard ERC20 (Sequential) vs ParallelCoin (Concurrent)
+    dateFormat X
+    axisFormat %L
+
+    section Standard ERC20
+    User 1 Transfer (BLOCKED): 0, 100
+    User 2 Transfer (BLOCKED): 100, 200
+    User 3 Transfer (BLOCKED): 200, 300
+    User 4 Transfer (BLOCKED): 300, 400
+    User 5 Transfer (BLOCKED): 400, 500
+
+    section ParallelCoin
+    User 1 Transfer ✓: 0, 100
+    User 2 Transfer ✓: 0, 100
+    User 3 Transfer ✓: 0, 100
+    User 4 Transfer ✓: 0, 100
+    User 5 Transfer ✓: 0, 100
+```
+
+```mermaid
+graph LR
+    subgraph "❌ Standard ERC20 - Sequential Execution"
+        A1[User 1] -->|Write Lock| M1[mapping balance]
+        A2[User 2] -.->|BLOCKED| M1
+        A3[User 3] -.->|BLOCKED| M1
+        M1 -->|Unlock| A2
+        A2 -->|Write Lock| M1
+        M1 -->|Unlock| A3
+    end
+
+    subgraph "✅ ParallelCoin - Concurrent Execution"
+        B1[User 1] -->|Delta +100| CM[AddressU256CumMap]
+        B2[User 2] -->|Delta +200| CM
+        B3[User 3] -->|Delta +300| CM
+        CM -->|Merge All| R[Final State]
+    end
+
+    style M1 fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff
+    style CM fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    style R fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+```
+
 ## 🏗️ Architecture
+
+### System Overview
+
+```mermaid
+graph TB
+    subgraph "Users"
+        U1[User 1]
+        U2[User 2]
+        U3[User N]
+    end
+
+    subgraph "Parallel Insurance Protocol"
+        PCM[ParallelCoverageManager<br/>Concurrent Primitives]
+        PC[ParallelCoin<br/>Payment Token]
+        MP[MockPyth<br/>Price Oracle]
+        PM[PriceMath Library<br/>Price Calculations]
+    end
+
+    subgraph "Arcology Concurrent Primitives"
+        U256[U256Cumulative<br/>Global Counters]
+        AUCM[AddressU256CumMap<br/>Per-User State]
+    end
+
+    U1 -->|buyPolicy| PCM
+    U2 -->|buyPolicy| PCM
+    U3 -->|buyPolicy| PCM
+
+    PCM -->|uses| PC
+    PCM -->|queries| MP
+    PCM -->|calculates| PM
+    PCM -->|updates| U256
+    PCM -->|updates| AUCM
+
+    U256 -.->|totalPolicies<br/>totalCoverage<br/>totalPremiums| PCM
+    AUCM -.->|userPolicyCount<br/>userTotalCoverage| PCM
+
+    style PCM fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
+    style PC fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+    style U256 fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    style AUCM fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+```
 
 ### Smart Contracts
 
@@ -91,6 +194,98 @@ function _transfer(address from, address to, uint256 amount) internal {
 #### 3. MockPyth
 Price oracle integration for premium calculations based on token prices.
 
+### Policy Purchase Workflow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ParallelCoin
+    participant ParallelCoverageManager
+    participant Pyth Oracle
+    participant U256Cumulative
+    participant AddressU256CumMap
+
+    User->>ParallelCoin: approve(insurance, premium)
+    ParallelCoin-->>User: ✓ Approved
+
+    User->>ParallelCoverageManager: buyPolicy(token, amount, duration, priceId)
+
+    ParallelCoverageManager->>Pyth Oracle: getPrice(priceId)
+    Pyth Oracle-->>ParallelCoverageManager: Price Data (price, confidence, expo)
+
+    ParallelCoverageManager->>ParallelCoverageManager: calculatePremium()
+    Note over ParallelCoverageManager: Based on coverage, duration,<br/>price, and confidence
+
+    ParallelCoverageManager->>ParallelCoin: transferFrom(user, contract, premium)
+    ParallelCoin->>AddressU256CumMap: set(user, -premium)
+    ParallelCoin->>AddressU256CumMap: set(contract, +premium)
+    ParallelCoin-->>ParallelCoverageManager: ✓ Transfer Complete
+
+    ParallelCoverageManager->>ParallelCoverageManager: Create Policy
+
+    par Parallel State Updates
+        ParallelCoverageManager->>U256Cumulative: totalPolicies.add(1)
+        ParallelCoverageManager->>U256Cumulative: totalCoverage.add(amount)
+        ParallelCoverageManager->>U256Cumulative: totalPremiums.add(premium)
+        ParallelCoverageManager->>AddressU256CumMap: userPolicyCount.set(user, +1)
+        ParallelCoverageManager->>AddressU256CumMap: userTotalCoverage.set(user, +amount)
+        ParallelCoverageManager->>AddressU256CumMap: userTotalPremiums.set(user, +premium)
+    end
+
+    ParallelCoverageManager-->>User: ✓ Policy Created (policyId)
+
+    Note over User,AddressU256CumMap: All state updates use DELTA OPERATIONS<br/>Multiple users can buy policies SIMULTANEOUSLY
+```
+
+### Concurrent Primitives Architecture
+
+```mermaid
+graph TB
+    subgraph "Traditional Solidity Storage"
+        T1[uint256 totalPolicies]
+        T2[mapping address => uint256]
+        T3[uint256[] arrays]
+
+        TX1[Transaction 1] -.->|BLOCKED| T1
+        TX2[Transaction 2] -.->|BLOCKED| T1
+        TX3[Transaction 3] -.->|BLOCKED| T1
+
+        style T1 fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff
+        style T2 fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff
+        style T3 fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff
+    end
+
+    subgraph "Arcology Concurrent Primitives"
+        C1[U256Cumulative<br/>Global Counters]
+        C2[AddressU256CumMap<br/>Per-User State]
+
+        CTX1[Transaction 1] -->|Delta: +1| C1
+        CTX2[Transaction 2] -->|Delta: +1| C1
+        CTX3[Transaction 3] -->|Delta: +1| C1
+
+        CTX4[User A Tx] -->|Delta: +100| C2
+        CTX5[User B Tx] -->|Delta: +200| C2
+        CTX6[User C Tx] -->|Delta: +300| C2
+
+        C1 -->|Merge| F1[Final State: 3]
+        C2 -->|Merge| F2[Final State:<br/>A: 100, B: 200, C: 300]
+
+        style C1 fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
+        style C2 fill:#4CAF50,stroke:#2E7D32,stroke-width:3px,color:#fff
+        style F1 fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+        style F2 fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+    end
+
+    Note1[❌ Sequential Execution<br/>Write Conflicts<br/>Low TPS]
+    Note2[✅ Parallel Execution<br/>No Conflicts<br/>High TPS]
+
+    T1 -.-> Note1
+    C1 --> Note2
+
+    style Note1 fill:#ffebee,stroke:#c62828,stroke-width:1px
+    style Note2 fill:#e8f5e9,stroke:#2E7D32,stroke-width:1px
+```
+
 ### Parallel Patterns Used
 
 #### Pattern 1: Global Counters with U256Cumulative
@@ -122,6 +317,77 @@ balances.set(to, int256(amount), 0, type(uint256).max);
 // ❌ Standard ERC20 - sequential only
 balances[from] -= amount;
 balances[to] += amount;
+```
+
+### Policy Lifecycle State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active: buyPolicy()
+
+    Active --> Cancelled: cancelPolicy()
+    Active --> Claimed: settleClaim(approved=true)
+    Active --> Expired: Time expires
+    Active --> UnderReview: checkClaim()
+
+    UnderReview --> Claimed: settleClaim(approved=true)
+    UnderReview --> Active: settleClaim(approved=false)
+
+    Cancelled --> [*]
+    Claimed --> [*]
+    Expired --> [*]
+
+    note right of Active
+        Policy is active and valid
+        Can file claims
+        Can cancel for refund
+    end note
+
+    note right of UnderReview
+        Claim submitted
+        Awaiting owner decision
+    end note
+
+    note right of Claimed
+        Payout processed
+        Policy terminated
+    end note
+```
+
+### Claims Processing Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ParallelCoverageManager
+    participant Owner
+    participant ParallelCoin
+
+    User->>ParallelCoverageManager: checkClaim(policyId, reason, amount)
+
+    ParallelCoverageManager->>ParallelCoverageManager: Validate Policy
+    Note over ParallelCoverageManager: Check: Active status<br/>Not expired<br/>Amount ≤ coverage
+
+    ParallelCoverageManager->>U256Cumulative: totalClaims.add(1)
+    ParallelCoverageManager-->>User: ✓ Claim Submitted (claimId)
+
+    Note over User,Owner: Claim Status: Pending
+
+    Owner->>ParallelCoverageManager: settleClaim(claimId, approved, payout, reason)
+
+    alt Claim Approved
+        ParallelCoverageManager->>ParallelCoin: transfer(user, payout)
+        ParallelCoin->>AddressU256CumMap: set(contract, -payout)
+        ParallelCoin->>AddressU256CumMap: set(user, +payout)
+        ParallelCoin-->>ParallelCoverageManager: ✓ Transfer Complete
+
+        ParallelCoverageManager->>U256Cumulative: totalCoverage.sub(coverageAmount)
+        ParallelCoverageManager-->>User: ✓ Payout Sent
+        Note over User,Owner: Policy Status: Claimed
+    else Claim Denied
+        ParallelCoverageManager-->>User: ✗ Claim Denied
+        Note over User,Owner: Policy Status: Active (unchanged)
+    end
 ```
 
 ## 🚀 Quick Start
