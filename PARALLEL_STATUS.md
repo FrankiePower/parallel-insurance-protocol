@@ -1,4 +1,4 @@
-# Parallel Insurance Implementation Status
+# Parallel Insurance Protocol Implementation Status
 
 ## ✅ Completed
 

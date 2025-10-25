@@ -4,8 +4,8 @@ import "@arcologynetwork/concurrentlib/lib/map/AddressU256Cum.sol";
 
 /**
  * @title ParallelCoin
- * @dev Parallel ERC20-like token using Arcology concurrent primitives
- * Based on ParallelSubcurrency from Arcology examples
+ * @dev Parallel ERC20-compatible token for Parallel Insurance Protocol using Arcology concurrent primitives
+ * @notice Based on ParallelSubcurrency from Arcology examples - enables unlimited parallel transfers
  */
 contract ParallelCoin {
     address public minter;

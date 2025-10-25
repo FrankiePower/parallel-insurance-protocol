@@ -12,7 +12,7 @@ import "./libraries/PriceMath.sol";
 
 /**
  * @title ParallelCoverageManager
- * @dev Manages insurance policies with Pyth price feed integration - PARALLEL VERSION using Arcology concurrent primitives
+ * @dev Core contract for Parallel Insurance Protocol - manages insurance policies with Pyth price feed integration using Arcology concurrent primitives
  * @notice Demonstrates massive parallelism: Uses U256Cumulative for all counters and AddressU256CumMap for per-user tracking
  */
 contract ParallelCoverageManager is Ownable, Pausable {

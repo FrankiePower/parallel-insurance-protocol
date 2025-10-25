@@ -1,6 +1,6 @@
-# Parallel Insurance - Arcology EthOnline Track Submission
+# Parallel Insurance Protocol - Arcology EthOnline Track Submission
 
-> **Massively Parallel DeFi Insurance** using Arcology concurrent primitives with Pyth price feed integration
+> **Massively Parallel DeFi Insurance Protocol** using Arcology concurrent primitives with Pyth price feed integration
 
 ## 🏆 Competition Entry
 
@@ -9,7 +9,7 @@ This project demonstrates **real-world parallel execution** for the [Arcology Et
 ## 🎯 What Makes This Special
 
 ### Real-World DeFi Application
-- **Insurance Protocol**: Users buy policies to protect against token rug-pulls
+- **Parallel Insurance Protocol**: Users buy policies to protect against token rug-pulls
 - **Pyth Oracle Integration**: Real-time price feeds for risk assessment
 - **Premium Calculation**: Dynamic pricing based on coverage amount, duration, and market conditions
 - **Claims Processing**: Full workflow from policy creation to claim settlement
@@ -189,14 +189,16 @@ npx arcology.net-monitor http://YOUR_IP:8545
 ## 📁 Project Structure
 
 ```
-rug-insure/
+parallel-insurance-protocol/
 ├── contracts/
 │   ├── ParallelCoverageManager.sol   # Main parallel insurance contract
 │   ├── ParallelCoin.sol               # Parallel ERC20 implementation
-│   ├── CoverageManager.sol            # Standard (non-parallel) version
 │   ├── MockPyth.sol                   # Price oracle mock
+│   ├── libraries/
+│   │   └── PriceMath.sol              # Price calculation library
 │   └── interfaces/
-│       └── IPyth.sol                  # Pyth oracle interface
+│       ├── IPyth.sol                  # Pyth oracle interface
+│       └── PythStructs.sol            # Pyth data structures
 ├── test/
 │   ├── test-minimal.js                # Basic deployment test
 │   ├── test-parallel-buy.js           # Full buyPolicy workflow test
@@ -278,7 +280,7 @@ The biggest blocker to parallel DeFi is the standard ERC20 implementation. Paral
 
 - ✅ **Uses Arcology Concurrent Primitives**: U256Cumulative, AddressU256CumMap
 - ✅ **Demonstrates Parallel Execution**: 20 concurrent buyPolicy transactions
-- ✅ **Real-World Application**: DeFi insurance protocol with oracle integration
+- ✅ **Real-World Application**: Parallel Insurance Protocol with oracle integration
 - ✅ **Benchmark Showing TPS**: 100% success rate on 20 parallel transactions
 - ✅ **Documentation**: Comprehensive README and inline comments
 - ✅ **Working Demo**: Multiple test scripts demonstrating functionality
