@@ -40,32 +40,30 @@ async function main() {
 
   console.log('\n======== SETUP ========')
 
-  // Use 1000 accounts for massive parallel benchmark
-  let accountsLength = Math.min(1000, accounts.length);
+  // Use 100 accounts for massive parallel benchmark
+  let accountsLength = Math.min(100, accounts.length);
   console.log(`Using ${accountsLength} accounts for benchmark generation`)
   console.log(`This will generate ${accountsLength} concurrent buyPolicy transactions`)
 
-  // Mint USDC to accounts (in batches to avoid network issues)
-  console.log('Minting USDC...')
+  // Mint USDC to accounts IN PARALLEL (Arcology supports this!)
+  console.log(`Minting USDC to ${accountsLength} accounts in parallel...`)
+  let mintPromises = [];
   for (i = 0; i < accountsLength; i++) {
-    let tx = await usdc.mint(accounts[i].address, ethers.utils.parseEther("100000"));
-    await tx.wait();
-    if ((i + 1) % 50 === 0) {
-      console.log(`  Minted for ${i + 1}/${accountsLength} accounts`);
-    }
+    mintPromises.push(usdc.mint(accounts[i].address, ethers.utils.parseEther("100000")));
   }
-  console.log(`✓ Minted USDC to ${accountsLength} accounts`)
+  await Promise.all(mintPromises);
+  console.log(`✓ Minted USDC to ${accountsLength} accounts in parallel`)
 
-  // Approve insurance for all accounts
-  console.log('Approving insurance...')
+  // Approve insurance for all accounts IN PARALLEL
+  console.log(`Approving insurance for ${accountsLength} accounts in parallel...`)
+  let approvePromises = [];
   for (i = 0; i < accountsLength; i++) {
-    let tx = await usdc.connect(accounts[i]).approve(insurance.address, ethers.constants.MaxUint256);
-    await tx.wait();
-    if ((i + 1) % 50 === 0) {
-      console.log(`  Approved ${i + 1}/${accountsLength} accounts`);
-    }
+    approvePromises.push(
+      usdc.connect(accounts[i]).approve(insurance.address, ethers.constants.MaxUint256)
+    );
   }
-  console.log(`✓ Approved insurance for ${accountsLength} accounts`)
+  await Promise.all(approvePromises);
+  console.log(`✓ Approved insurance for ${accountsLength} accounts in parallel`)
 
   // Set up Pyth price
   const priceId = ethers.utils.formatBytes32String("SHIT/USD");
