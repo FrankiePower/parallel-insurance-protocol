@@ -151,3 +151,25 @@ The key is that multiple users can buy policies simultaneously without blocking 
 - Example contracts: `/Users/user/SuperFranky/arcology-examples/scaffold`
 - Like contract benchmark: `benchmark/like/` (working reference)
 - DevNet: `docker run arcologynetwork/devnet`
+
+
+1. Generate the benchmark transactions (with parallel setup)
+
+
+npx hardhat run benchmark/insurance/gen-tx-insurance.js --network TestnetInfo
+
+
+
+2. Start the monitor (in a separate terminal)
+
+
+
+npx arcology.net-monitor http://172.20.10.2:8545
+
+
+3. Run the benchmark (in another terminal or after monitor is running)
+
+
+
+
+npx arcology.net-tx-sender http://172.20.10.2:8545 benchmark/insurance/txs/insurance/
